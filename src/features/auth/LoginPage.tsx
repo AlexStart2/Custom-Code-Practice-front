@@ -1,25 +1,27 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import type { FormEvent } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { loginUser } from '../../services/authService'
+import type { User } from '../../services/authService'
 import { useAuthStore } from '../../store/auth'
 
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const { setUser } = useAuthStore((state) => state.setUser);
+    const setUser = useAuthStore((state) => state.setUser);
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);
+    const [email, setEmail] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [error, setError] = useState<string>('');
 
-    async function handleSubmit(e) {
+    async function handleSubmit(e: FormEvent) {
         e.preventDefault();
 
         try {
-            const userData = await loginUser({ email, password });
+            const userData: User = await loginUser({ email, password });
             setUser(userData);
             navigate('/dashboard');
-        } catch (err) {
+        } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed');
         }
     }
@@ -31,7 +33,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className='space-y-4'>
             <div>
-                <label className='block text-sm'>Email:</label>
+                <label className='block text-sm' htmlFor='email'>Email:</label>
                 <input type='email'
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -40,7 +42,7 @@ export default function LoginPage() {
                 />
             </div>
             <div>
-                <label className='block text-sm'>Password: </label>
+                <label className='block text-sm' htmlFor='password'>Password: </label>
                 <input type='password'
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -56,7 +58,7 @@ export default function LoginPage() {
             </button>
         </form>
         <p className='mt-4 text-sm'>
-            Don't have an account? <a href='/register' className='text-blue-600'>Register</a>
+            Don't have an account? <Link to='/register' className='text-blue-600'>Register</Link>
         </p>
 
     
