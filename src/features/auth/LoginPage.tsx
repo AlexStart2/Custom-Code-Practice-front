@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, NavLink } from 'react-router-dom'
+import { Box, Button, TextField, Typography, Link } from '@mui/material';
 import { loginUser } from '../../services/authService'
-import type { User } from '../../services/authService'
 import { useAuthStore } from '../../store/auth'
 
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const setUser = useAuthStore((state) => state.setUser);
+    const setUser = useAuthStore((state) => state.login);
 
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -18,8 +18,8 @@ export default function LoginPage() {
         e.preventDefault();
 
         try {
-            const userData: User = await loginUser({ email, password });
-            setUser(userData);
+            const {access_token, userData }= await loginUser({ email, password });
+            setUser(access_token, userData);
             navigate('/dashboard');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed');
@@ -27,41 +27,52 @@ export default function LoginPage() {
     }
 
     return (
-        <div className='max-w-sm mx-auto mt-20 p-6 bg-white rounded shadow'>
-            <h2 className="text-2xl font-bold mb-4">Login</h2>
-            {error && <p className='text-red-500 mb-2'>{error}</p>}
-
-        <form onSubmit={handleSubmit} className='space-y-4'>
-            <div>
-                <label className='block text-sm' htmlFor='email'>Email:</label>
-                <input type='email'
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className='w-full mt-1 p-2 border rounded'
-                />
-            </div>
-            <div>
-                <label className='block text-sm' htmlFor='password'>Password: </label>
-                <input type='password'
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className='w-full mt-1 p-2 border rounded'
-                />
-            </div>
-            <button
-                type='submit'
-                className="w-full py-2 bg-blue-600 text-white rounded"
+        <>
+            <Box
+                component="form"
+                onSubmit={handleSubmit}
+                noValidate
             >
-                Login
-            </button>
-        </form>
-        <p className='mt-4 text-sm'>
-            Don't have an account? <Link to='/register' className='text-blue-600'>Register</Link>
-        </p>
-
-    
-    </div>
+                <Typography variant="h5" align="center" gutterBottom>
+                    Login
+                </Typography>
+                {error && <Typography color="error" align='center'>
+                    {error}
+                </Typography>}
+                <TextField
+                label = "Email"
+                type="email"
+                fullWidth
+                margin="normal"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                />
+                <TextField
+                label = "Password"
+                type="password"
+                fullWidth
+                margin="normal"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                />
+                <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    sx={{ mt: 2 }}
+                >
+                    Login
+                </Button>
+                <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                    Don't have an account?{' '}
+                    <Link component={NavLink} to="/auth/register">
+                        Register
+                    </Link>
+                </Typography>
+            </Box>
+        </>
     );
 }

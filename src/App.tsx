@@ -1,5 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import Layout from './components/Layout'
+import { Routes, Route, Navigate} from 'react-router-dom'
+import LayoutRoot from './components/LayoutRoot'
+import AuthLayout from './components/LayoutAuth'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
 import DashboardPage from './features/dashboard/DashboardPage'
@@ -11,27 +12,23 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Layout />} />
-      {/* Public */}
-      <Route index element={<LoginPage />} />
-      <Route path="login" element={<LoginPage />} />
-      <Route path='/register' element={<RegisterPage />} />
+      <Route element={<LayoutRoot />}>
+        <Route path="auth" element={<AuthLayout />}>
+          <Route index element={<Navigate to="login" replace />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
+        </Route>
 
-      {/*Protected */}
+        <Route
+          path="dashboard"
+          element={isLoggedIn ? <DashboardPage /> : <Navigate to="/auth/login" replace />}
+        />
+      </Route>
 
-      <Route
-        path='/dashboard'
-        element={isLoggedIn ? <DashboardPage /> : <Navigate to='/login' replace />}
-      />
-
-
-      {/*Fallback */}
-
-      <Route
-        path='*'
-        element={<Navigate to={isLoggedIn ? '/dashboard' : '/login'} replace />}
-      />
+      <Route path="*" element={<Navigate to="/auth/login" replace />} />
+      <Route index element={<Navigate to="/auth/login" replace />} />
     </Routes>
+
   )
 }
 

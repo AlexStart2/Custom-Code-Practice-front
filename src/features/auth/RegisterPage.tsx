@@ -1,8 +1,9 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { registerUser } from '../../services/authService';
+import { Box, Typography, TextField, Button, Link } from '@mui/material';
 
 
 export default function RegisterPage() {
@@ -16,56 +17,68 @@ export default function RegisterPage() {
         e.preventDefault();
         try {
             await registerUser({ name, email, password });
-            navigate('/login');
+            navigate('/auth/login');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Registration failed');
         }
     }
 
     return (
-        <div className='max-w-sm mx-auto mt-20 p-6 bg-white rounded shadow'>
-            <h2 className='text-2xl font-bold mb-4'>Register</h2>
-            {error && <p className='text-red-500 mb-2'>{error}</p>}
 
-            <form onSubmit={handleSubmit} className='space-y-4'>
-                <div>
-                    <label className='block text-sm'>Name:</label>
-                    <input
-                        type='text'
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className='w-full mt-1 p-2 border rounded'
-                        required
-                    />
-                </div>
-                <div>
-                    <label className='block text-sm'>Email:</label>
-                    <input
-                        type='email'
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className='w-full mt-1 p-2 border rounded'
-                        required
-                    />
-                </div>
-                <div>
-                    <label className='block text-sm'>Password:</label>
-                    <input
-                        type='password'
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className='w-full mt-1 p-2 border rounded'
-                        required
-                    />
-                </div>
-                <button type='submit' className='w-full py-2 bg-green-600 text-white rounded'>
+        <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            >
+                <Typography variant="h5" align="center" gutterBottom>
                     Register
-                </button>
-            </form>
+                </Typography>
+                {error && <Typography color="error" align='center'>
+                    {error}
+                </Typography>}
+                <TextField
+                    label="Name"
+                    type="text"
+                    fullWidth
+                    margin="normal"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                />
+                <TextField
+                    label="Email"
+                    type="email"
+                    fullWidth
+                    margin="normal"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                />
+                <TextField
+                    label="Password"
+                    type="password"
+                    fullWidth
+                    margin="normal"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                />
+                <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    sx={{ mt: 2 }}
+                >
+                    Register
+                </Button>
+                <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                    Already have an account?{' '}
+                    <Link component={NavLink} to="/auth/login">
+                        Login
+                    </Link>
+                </Typography>
+            </Box>
 
-            <p className='mt-4 text-center text-sm'>
-                Already have an account? <Link to='/login' className='text-blue-500'>Login</Link>
-            </p>
-        </div>
     )
 }
