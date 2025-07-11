@@ -1,10 +1,14 @@
 import { useAuthStore } from '../store/auth';
-import { AppBar, Toolbar, Typography, Button } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, IconButton, Avatar, Menu, MenuItem } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 export default function Navbar() {
   const navigate = useNavigate()
   const { isLoggedIn, logout, user } = useAuthStore();
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
   const handleLogout = () => {
     logout();
@@ -13,34 +17,41 @@ export default function Navbar() {
 
   return (
     <AppBar position="static" color="transparent" elevation={1}>
-        <Toolbar>
-          <Typography
-            variant="h6"
-            component={RouterLink}
-            to="/dashboard"
-            sx={{ flexGrow: 1, textDecoration: 'none', color: 'inherit' }}
-          >
-            Trainify
-          </Typography>
+      <Toolbar>
+        <Typography
+          variant="h6"
+          component={RouterLink}
+          to="/dashboard"
+          sx={{ flexGrow: 1, textDecoration: 'none', color: 'inherit' }}
+        >
+          Trainify
+        </Typography>
 
-          {isLoggedIn ? (
-            <>
-              <Typography sx={{ mr: 2 }}>Hi, {user?.name}</Typography>
-              <Button color="error" onClick={handleLogout}>
+        {isLoggedIn ? (
+          <>
+            <Typography variant="body1" sx={{ marginRight: 2 }}>
+              Hello, {user?.name}
+            </Typography>
+            <IconButton onClick={e => setAnchorEl(e.currentTarget)} size="small">
+              <Avatar sx={{ bgcolor: 'primary.main' }}>{user?.name?.[0]}</Avatar>
+            </IconButton>
+            <Menu anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)}>
+              <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
                 Logout
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button component={RouterLink} to="/auth/login">
-                Login
-              </Button>
-              <Button component={RouterLink} to="/auth/register">
-                Register
-              </Button>
-            </>
-          )}
-        </Toolbar>
-      </AppBar>
+              </MenuItem>
+            </Menu>
+          </>
+        ) : (
+          <>
+            <Button component={RouterLink} to="/auth/login">
+              Login
+            </Button>
+            <Button component={RouterLink} to="/auth/register">
+              Register
+            </Button>
+          </>
+        )}
+      </Toolbar>
+    </AppBar>
   );
 }
