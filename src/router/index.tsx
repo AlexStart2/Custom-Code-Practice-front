@@ -11,6 +11,7 @@ import HelpPage from '../features/help/HelpPage';
 import Models from '../features/dashboard/Models';
 import Settings from '../features/dashboard/Settings';
 import DatasetsUpload from '../features/dashboard/DatasetsUpload';
+import AskPage from '../features/dashboard/AskPage';
 import { useAuthStore } from '../store/auth';
 
 export default function AppRoutes() {
@@ -37,6 +38,7 @@ export default function AppRoutes() {
                 </Route>
                 <Route path="training" element={<TrainingJobs />} />
                 <Route path="models" element={<Models />} />
+                <Route path="ask" element={<AskPage />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="" replace />} />
             </Route>

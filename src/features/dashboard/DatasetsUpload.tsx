@@ -1,5 +1,5 @@
 // src/features/dashboard/DatasetsUpload.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import {
   Box, Typography, Button, Table, TableHead,
@@ -10,8 +10,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
+import type { Dataset } from './Datasets';
 
-const API_URL = import.meta.env.PYTHON_API_URL || 'http://localhost:5001/';
+const API_URL = import.meta.env.VITE_API_PYTHON_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const ALLOWED_EXTENSIONS = [
   '.docx', '.doc', '.odt',
@@ -31,6 +33,33 @@ export default function DatasetsUpload() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [datasetName, setDatasetName] = useState('');
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+
+
+
+  const validateDatasetName = (name: string): boolean => {
+    setDatasetName(name);
+    if (name.length > 50) {
+      setError('Dataset name cannot exceed 50 characters');
+      return false;
+    }
+    // check datasetsNames to avoid duplicates
+    if (datasets.some(dataset => dataset.name === name)) {
+      setError('Dataset name already exists');
+      return false;
+    }
+    // Reset error if validation passes
+    if (error) {
+      setError(null);
+    }
+
+    
+    // If all validations pass
+    setError(null);
+
+    return true;
+  };
+
 
   const validateFiles = (newFiles: FileList | null): File[] => {
     if (!newFiles) return [];
@@ -75,6 +104,12 @@ export default function DatasetsUpload() {
         return;
     }
 
+    if (!validateDatasetName(datasetName)) {
+      return;
+    }
+
+    console.log(formData.get('datasetName'));
+
     try {
       setUploading(true);
       setProgress(0);
@@ -100,6 +135,29 @@ export default function DatasetsUpload() {
       setUploading(false);
     }
   };
+
+
+  useEffect(() => {
+    async function fetchDatasets() {
+      try {
+        const response = await axios.get<Dataset[]>(`${API_BASE_URL}datasets/get-user-datasets`); // After implementing the backend to change type
+        // Normalize the response into an array
+        const data = response.data;
+        let list: Dataset[] = [];
+        if (Array.isArray(data)) {
+          list = data;
+        } else if (typeof data === 'object') {
+          // If keyed by id
+          list = Object.values(data) as Dataset[];
+        }
+        setDatasets(list);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load datasets');
+      }
+    }
+
+    fetchDatasets();
+  }, []);
 
   return (
     <Box maxWidth="md" mx="auto" ml={2}>
@@ -162,7 +220,7 @@ export default function DatasetsUpload() {
             label="Dataset Name"
             variant="outlined"
             value={datasetName}
-            onChange={(e) => setDatasetName(e.target.value)}
+            onChange={(e) => validateDatasetName(e.target.value)}
             disabled={uploading}
             sx={{ width: '200px' }}
           />

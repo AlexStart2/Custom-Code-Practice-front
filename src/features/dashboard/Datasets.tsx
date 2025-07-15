@@ -4,11 +4,13 @@ import axios from 'axios';
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Paper, Button } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
-interface Dataset {
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+export interface Dataset {
   id: string;
   name: string;
   createdAt: string;
-  fileCount: number;
+  chunks: any[];
 }
 
 export default function Datasets() {
@@ -16,17 +18,16 @@ export default function Datasets() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+
   useEffect(() => {
     async function fetchDatasets() {
       try {
-        const response = await axios.get<any>('/api/datasets'); // After implementing the backend to change type
+        const response = await axios.get<Dataset[]>(`${API_BASE_URL}datasets/get-user-datasets`); // After implementing the backend to change type
         // Normalize the response into an array
         const data = response.data;
         let list: Dataset[] = [];
         if (Array.isArray(data)) {
           list = data;
-        } else if (Array.isArray(data.datasets)) {
-          list = data.datasets;
         } else if (typeof data === 'object') {
           // If keyed by id
           list = Object.values(data) as Dataset[];
@@ -68,7 +69,7 @@ export default function Datasets() {
             {datasets.map((ds) => (
               <TableRow key={ds.id} hover>
                 <TableCell>{ds.name}</TableCell>
-                <TableCell>{ds.fileCount}</TableCell>
+                <TableCell>{ds.chunks.length}</TableCell>
                 <TableCell>{new Date(ds.createdAt).toLocaleString()}</TableCell>
                 <TableCell align="right">
                   <Button size="small" component={RouterLink} to={`/dashboard/datasets/${ds.id}`}>

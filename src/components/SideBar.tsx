@@ -12,6 +12,7 @@ const links = [
   { to: '/dashboard/datasets',   label: 'Datasets',     icon: <StorageIcon /> },
   { to: '/dashboard/training',   label: 'Training Jobs',icon: <PlayCircleOutlineIcon /> },
   { to: '/dashboard/models',     label: 'Trained Models',       icon: <ModelTrainingIcon /> },
+  { to: '/dashboard/ask',        label: 'Ask RAG',     icon: <PlayCircleOutlineIcon /> },
   { to: '/dashboard/settings',   label: 'Settings',     icon: <SettingsIcon /> },
 ];
 
