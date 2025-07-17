@@ -4,7 +4,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import {
   Box, Typography, Button, Table, TableHead,
   TableRow, TableCell, TableBody, IconButton, Alert, LinearProgress,
-  TextField
+  TextField, Snackbar
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -24,7 +24,9 @@ const ALLOWED_EXTENSIONS = [
   '.html', '.xml',
   '.pdf',
   '.png', '.jpg', '.jpeg', '.heic',
-  '.txt',
+  '.txt', '.md', '.org',
+  '.js', '.ts', '.c', '.cpp', '.py', '.java', '.go',
+  '.cs', '.rb', '.swift',
 ];
 
 export default function DatasetsUpload() {
@@ -34,8 +36,9 @@ export default function DatasetsUpload() {
   const [progress, setProgress] = useState(0);
   const [datasetName, setDatasetName] = useState('');
   const [datasets, setDatasets] = useState<Dataset[]>([]);
-
-
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [chunkSize, setChunkSize]     = useState<number>(1000);
+  const [chunkOverlap, setChunkOverlap] = useState<number>(200);
 
   const validateDatasetName = (name: string): boolean => {
     setDatasetName(name);
@@ -108,6 +111,9 @@ export default function DatasetsUpload() {
       return;
     }
 
+    formData.append('chunk_size', chunkSize.toString());
+    formData.append('chunk_overlap', chunkOverlap.toString());
+
     console.log(formData.get('datasetName'));
 
     try {
@@ -128,17 +134,18 @@ export default function DatasetsUpload() {
         }
       );
       setFiles([]);
+      setDatasetName('');     // clear name
+      setSuccessMsg('Dataset uploaded successfully');
     } catch (err) {
       console.error(err);
       setError('Upload failed. Please try again.');
     } finally {
       setUploading(false);
+      fetchDatasets(); // Refresh datasets after upload
     }
   };
 
-
-  useEffect(() => {
-    async function fetchDatasets() {
+  async function fetchDatasets() {
       try {
         const response = await axios.get<Dataset[]>(`${API_BASE_URL}datasets/get-user-datasets`); // After implementing the backend to change type
         // Normalize the response into an array
@@ -156,6 +163,7 @@ export default function DatasetsUpload() {
       }
     }
 
+  useEffect(() => {
     fetchDatasets();
   }, []);
 
@@ -167,12 +175,29 @@ export default function DatasetsUpload() {
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Box component="form" onSubmit={handleSubmit}>
+
+      {/* Success Snackbar */}
+      <Snackbar
+        open={!!successMsg}
+        autoHideDuration={4000}
+        onClose={() => setSuccessMsg(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSuccessMsg(null)}
+          severity="success"
+          sx={{ width: '100%' }}
+        >
+          {successMsg}
+        </Alert>
+      </Snackbar>
+
+      <Box component="form" onSubmit={handleSubmit} sx={{display: 'grid', gap: 2}}>
         <Button
           variant="outlined"
           component="label"
           startIcon={<AddIcon />}
-          sx={{ mb: 2 }}
+          sx={{ mb: 2, width: 'fit-content' }}
         >
           Add Files
           <input
@@ -215,7 +240,6 @@ export default function DatasetsUpload() {
           </Table>
         )}
 
-        <br />
           <TextField
             label="Dataset Name"
             variant="outlined"
@@ -224,6 +248,26 @@ export default function DatasetsUpload() {
             disabled={uploading}
             sx={{ width: '200px' }}
           />
+
+        <TextField
+          label="Chunk Size"
+          type="number"
+          value={chunkSize}
+          onChange={e => setChunkSize(Number(e.target.value))}
+          helperText="Max characters per text chunk"
+          disabled={uploading}
+          sx={{ maxWidth: '200px' }}
+        />
+
+        <TextField
+          label="Chunk Overlap"
+          type="number"
+          value={chunkOverlap}
+          onChange={e => setChunkOverlap(Number(e.target.value))}
+          helperText="Characters to overlap between chunks"
+          disabled={uploading}
+          sx={{ maxWidth: '200px' }}
+        />
 
         {uploading && (
           <LinearProgress

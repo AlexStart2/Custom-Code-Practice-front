@@ -163,7 +163,7 @@ export default function AskPage() {
           <Typography paragraph>{response.answer}</Typography>
 
           <Typography variant="subtitle1" gutterBottom>
-            Supporting Context
+            Supporting Context NEED TO ADD THRESHOLD
           </Typography>
           {/* {response.context.map((text, i) => (
             <Box key={i} sx={{ mb: 1 }}>

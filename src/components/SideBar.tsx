@@ -4,14 +4,14 @@ import { Box, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/mate
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import StorageIcon   from '@mui/icons-material/Storage';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
-import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
+import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import SettingsIcon  from '@mui/icons-material/Settings';
 
 const links = [
   { to: '/dashboard',        label: 'Overview',     icon: <DashboardIcon /> },
   { to: '/dashboard/datasets',   label: 'Datasets',     icon: <StorageIcon /> },
-  { to: '/dashboard/training',   label: 'Training Jobs',icon: <PlayCircleOutlineIcon /> },
-  { to: '/dashboard/models',     label: 'Trained Models',       icon: <ModelTrainingIcon /> },
+  { to: '/dashboard/jobs',   label: 'Current Jobs',icon: <PlaylistAddCheckIcon/> },
+  // { to: '/dashboard/models',     label: 'Trained Models',       icon: <ModelTrainingIcon /> },
   { to: '/dashboard/ask',        label: 'Ask RAG',     icon: <PlayCircleOutlineIcon /> },
   { to: '/dashboard/settings',   label: 'Settings',     icon: <SettingsIcon /> },
 ];

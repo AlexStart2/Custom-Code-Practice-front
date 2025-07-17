@@ -4,7 +4,6 @@ import LayoutRoot from '../components/LayoutRoot';
 import DashboardLayout from '../features/dashboard/DashboardLayout';
 import Overview from '../features/dashboard/Overview';
 import Datasets from '../features/dashboard/Datasets';
-import TrainingJobs from '../features/dashboard/TrainingJobs';
 import LoginPage from '../features/auth/LoginPage';
 import RegisterPage from '../features/auth/RegisterPage';
 import HelpPage from '../features/help/HelpPage';
@@ -13,6 +12,8 @@ import Settings from '../features/dashboard/Settings';
 import DatasetsUpload from '../features/dashboard/DatasetsUpload';
 import AskPage from '../features/dashboard/AskPage';
 import { useAuthStore } from '../store/auth';
+import DatasetDetail from '../features/dashboard/DatasetsDetail';
+import JobStatus from '../features/dashboard/JobStatus';
 
 export default function AppRoutes() {
   const { isLoggedIn } = useAuthStore();
@@ -35,8 +36,9 @@ export default function AppRoutes() {
                 <Route path="datasets">
                     <Route index element={<Datasets />} />
                     <Route path="upload" element={<DatasetsUpload />} />
+                    <Route path=":id" element={<DatasetDetail />} />
                 </Route>
-                <Route path="training" element={<TrainingJobs />} />
+                <Route path="jobs" element={<JobStatus />} />
                 <Route path="models" element={<Models />} />
                 <Route path="ask" element={<AskPage />} />
                 <Route path="settings" element={<Settings />} />

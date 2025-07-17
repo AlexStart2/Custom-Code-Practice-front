@@ -15,6 +15,12 @@ export default function Navbar() {
     navigate('/auth/login');
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+    }
+  };
+
   return (
     <AppBar position="static" color="transparent" elevation={1}>
       <Toolbar>
@@ -32,7 +38,11 @@ export default function Navbar() {
             <Typography variant="body1" sx={{ marginRight: 2 }}>
               Hello, {user?.name}
             </Typography>
-            <IconButton onClick={e => setAnchorEl(e.currentTarget)} size="small">
+            <IconButton 
+              onClick={e => setAnchorEl(e.currentTarget)} 
+              onKeyDown={handleKeyDown}
+              size="small"
+            >
               <Avatar sx={{ bgcolor: 'primary.main' }}>{user?.name?.[0]}</Avatar>
             </IconButton>
             <Menu anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)}>

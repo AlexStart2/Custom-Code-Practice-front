@@ -3,7 +3,8 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { registerUser } from '../../services/authService';
-import { Box, Typography, TextField, Button, Link } from '@mui/material';
+import { Box, Typography, TextField, Button, Link, InputAdornment, IconButton } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 
 export default function RegisterPage() {
@@ -11,6 +12,7 @@ export default function RegisterPage() {
     const [name, setName] = useState<string>('');
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
+    const [showPassword, setShowPassword] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
 
     async function handleSubmit(e: FormEvent) {
@@ -56,12 +58,25 @@ export default function RegisterPage() {
                 />
                 <TextField
                     label="Password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     fullWidth
                     margin="normal"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    edge="end"
+                                    aria-label="toggle password visibility"
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            </InputAdornment>
+                        )
+                    }}
                 />
                 <Button
                     type="submit"
