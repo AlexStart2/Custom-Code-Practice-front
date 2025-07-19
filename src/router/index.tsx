@@ -7,7 +7,6 @@ import Datasets from '../features/dashboard/Datasets';
 import LoginPage from '../features/auth/LoginPage';
 import RegisterPage from '../features/auth/RegisterPage';
 import HelpPage from '../features/help/HelpPage';
-import Models from '../features/dashboard/Models';
 import Settings from '../features/dashboard/Settings';
 import DatasetsUpload from '../features/dashboard/DatasetsUpload';
 import AskPage from '../features/dashboard/AskPage';
@@ -39,7 +38,6 @@ export default function AppRoutes() {
                     <Route path=":id" element={<DatasetDetail />} />
                 </Route>
                 <Route path="jobs" element={<JobStatus />} />
-                <Route path="models" element={<Models />} />
                 <Route path="ask" element={<AskPage />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="" replace />} />

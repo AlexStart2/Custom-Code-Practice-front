@@ -1,4 +1,3 @@
-// src/features/dashboard/DatasetDetail.tsx
 import { useState, useEffect } from 'react';
 import {
   Box,
@@ -14,46 +13,58 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  List,
-  ListItem,
-  ListItemText,
   Divider,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
 } from '@mui/material';
-import { Edit, Save, Cancel, Delete } from '@mui/icons-material';
+import { Edit, Save, Cancel, Delete, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import type { Dataset } from './Datasets';
 
-interface DatasetDetail {
+export interface fileDetail {
   _id: string;
-  name: string;
-  owner: string;
-  chunks: { file: string; results: { text: string; embedding: number[] }[] } [];
-  createdAt: string;
+  file_name: string;
+  results: { text: string; embedding: number[] }[];
+}
+
+export interface DatasetDetail {
+  dataset: Dataset;
+  files: fileDetail[];
 }
 
 export default function DatasetDetail() {
-  const { id }        = useParams<{ id: string }>();
-  const navigate      = useNavigate();
-  const [data, setData]      = useState<DatasetDetail | null>(null);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [data, setData] = useState<DatasetDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [deleting, setDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const API_BASE = import.meta.env.VITE_API_URL;
+  // For renaming dataset
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName]         = useState('');
 
-  // Fetch the dataset on mount (and when id changes)
+  // For delete confirmation
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting]           = useState(false);
+
+  // Track which files are “expanded” (show all chunks) by file _id
+  const [expandedFiles, setExpandedFiles] = useState<Record<string, boolean>>({});
+
+  const API = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     if (!id) return;
     (async () => {
       setLoading(true);
       try {
-        const res = await axios.get<DatasetDetail>(`${API_BASE}datasets/dataset/${id}`);
+        const res = await axios.get<DatasetDetail>(`${API}datasets/dataset/${id}`);
         setData(res.data);
-        setNewName(res.data.name);
+        setNewName(res.data.dataset.name);
         setError(null);
       } catch (e: any) {
         setError(e.response?.data?.message || 'Failed to load dataset');
@@ -63,25 +74,25 @@ export default function DatasetDetail() {
     })();
   }, [id]);
 
-  // Handle renaming
+  // Save new dataset name
   const saveName = async () => {
     if (!id) return;
     try {
-      await axios.patch(`${API_BASE}datasets/dataset/${id}`, { name: newName });
-      setData((d) => d && { ...d, name: newName });
-      setEditing(false);
+      await axios.patch(`${API}datasets/dataset/name/${id}`, { name: newName });
+      setData((d) => d && ({ ...d, dataset: { ...d.dataset, name: newName } }));
+      setEditingName(false);
       setSuccess('Name updated');
     } catch (e: any) {
       setError(e.response?.data?.message || 'Update failed');
     }
   };
 
-  // Handle deletion
+  // Confirm dataset deletion
   const doDelete = async () => {
     if (!id) return;
     setDeleting(true);
     try {
-      await axios.delete(`${API_BASE}datasets/${id}`);
+      await axios.delete(`${API}datasets/dataset/${id}`);
       navigate('/dashboard/datasets', { replace: true });
     } catch (e: any) {
       setError(e.response?.data?.message || 'Delete failed');
@@ -90,12 +101,25 @@ export default function DatasetDetail() {
     }
   };
 
+  // Toggle expand/collapse for a file
+  const toggleFile = (fileId: string) => {
+    setExpandedFiles((prev) => ({ 
+      ...prev, 
+      [fileId]: !prev[fileId] 
+    }));
+  };
+
+  // Handlers for chunk edit/delete — fill these in to call your API
+  const handleEditChunk = (fileId: string, idx: number) => {
+    console.log('Edit chunk', fileId, idx);
+  };
+  const handleDeleteChunk = async (fileId: string, idx: number) => {
+    // call DELETE /datasets/:id/file/:fileId/chunk/:idx
+    console.log('Delete chunk', fileId, idx);
+  };
+
   if (loading) {
-    return (
-      <Box textAlign="center" mt={4}>
-        <CircularProgress />
-      </Box>
-    );
+    return <Box textAlign="center" mt={4}><CircularProgress /></Box>;
   }
   if (error) {
     return <Alert severity="error">{error}</Alert>;
@@ -106,25 +130,24 @@ export default function DatasetDetail() {
 
   return (
     <Box maxWidth="md" mx="auto" mt={4} p={2}>
-      {/* Title & edit */}
+      {/* Title & rename */}
       <Box display="flex" alignItems="center" mb={2}>
-        {editing ? (
+        {editingName ? (
           <>
             <TextField
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
+              size="small"
             />
             <IconButton onClick={saveName}><Save /></IconButton>
-            <IconButton onClick={() => { setEditing(false); setNewName(data.name); }}><Cancel /></IconButton>
+            <IconButton onClick={() => { setEditingName(false); setNewName(data.dataset.name); }}><Cancel /></IconButton>
           </>
         ) : (
           <>
             <Typography variant="h4" sx={{ flexGrow: 1 }}>
-              {data.name}
+              {data.dataset.name}
             </Typography>
-            <IconButton onClick={() => setEditing(true)}>
-              <Edit />
-            </IconButton>
+            <IconButton onClick={() => setEditingName(true)}><Edit /></IconButton>
           </>
         )}
         <Button
@@ -138,52 +161,86 @@ export default function DatasetDetail() {
 
       {/* Metadata */}
       <Typography variant="subtitle2" color="textSecondary">
-        Created: {new Date(data.createdAt).toLocaleString()}
+        Created: {new Date(data.dataset.createdAt).toLocaleString()}
       </Typography>
       <Typography variant="subtitle2" color="textSecondary">
-        Files: {data.chunks.map(c => c.file).join(', ')}
-      </Typography>
-      <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-        Total files: {data.chunks.length}
+        Files: {data.files.length}
       </Typography>
       <Divider sx={{ my: 2 }} />
 
-      {/* (Optional) List first few chunks */}
-      <Typography variant="h6">Extracted Text</Typography>
-      <List dense>
-        {data.chunks.map((file) => (
-          <ListItem>
-            <ListItemText
-                primary={file.file}
-                secondary={
-                    file.results.slice(0, 5).map((res, idx) => (
-                    <Box key={idx}>
-                        <Typography variant="body2">{res.text}</Typography>
-                    </Box>
-                    ))
-                }
-            />
-          </ListItem>
-        ))}
-      </List>
+      {/* Per-file chunk tables */}
+      {data.files.map((fileDetail) => {
+        const isExpanded = !!expandedFiles[fileDetail._id];
+        const chunksToShow = isExpanded
+          ? fileDetail.results
+          : fileDetail.results.slice(0, 5);
 
-      {/* Confirmation Dialog */}
+        return (
+          <Box key={fileDetail._id} mb={4}>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                {fileDetail.file_name}
+              </Typography>
+              {fileDetail.results.length > 5 && (
+                <Button
+                  size="small"
+                  onClick={() => toggleFile(fileDetail._id)}
+                  startIcon={isExpanded ? <ExpandLess /> : <ExpandMore />}
+                >
+                  {isExpanded ? 'Show less' : 'Show all'}
+                </Button>
+              )}
+            </Box>
+
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {chunksToShow.map((chunk, idx) => (
+                  <TableRow key={`${fileDetail._id}-${idx}`} hover>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {chunk.text}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditChunk(fileDetail._id, idx)}
+                      >
+                        <Edit fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteChunk(fileDetail._id, idx)}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        );
+      })}
+
+      {/* Delete confirmation */}
       <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>
         <DialogTitle>Delete Dataset?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete "{data.name}"? This cannot be undone.
+            Are you sure you want to delete "{data.dataset.name}"? This cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmDelete(false)} disabled={deleting}>
             Cancel
           </Button>
-          <Button
-            onClick={doDelete}
-            color="error"
-            disabled={deleting}
-          >
+          <Button onClick={doDelete} color="error" disabled={deleting}>
             {deleting ? <CircularProgress size={20} /> : 'Delete'}
           </Button>
         </DialogActions>

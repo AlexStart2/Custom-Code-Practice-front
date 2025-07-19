@@ -1,25 +1,19 @@
-// src/features/dashboard/JobsPage.tsx
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import {
-  Box,
-  Typography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Button,
-  IconButton,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  CircularProgress,
-  Snackbar,
-  Alert,
+  Box, Typography, Accordion, AccordionSummary,
+  AccordionDetails, Button, Table,
+  TableHead, TableRow, TableCell, TableBody,
+  CircularProgress, Snackbar, Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CancelIcon from '@mui/icons-material/Cancel';
-import DeleteIcon from '@mui/icons-material/Delete';
+// import CancelIcon from '@mui/icons-material/Cancel';
+// import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 
 interface Job {
@@ -27,15 +21,19 @@ interface Job {
   owner: string;
   dataset_name: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'canceled';
+  finishedAt?: string;
   createdAt: string;
+  error?: string;
 }
 
 interface ProcessingFile {
   _id: string;
   job_id: string;
   file_name: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'canceled';
+  finishedAt?: string;
   createdAt: string;
+  error?: string;
 }
 
 interface JobResult {
@@ -44,78 +42,90 @@ interface JobResult {
 }
 
 export default function JobsPage() {
-  const [data, setData]         = useState<JobResult | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
-  const [snack, setSnack]       = useState<string | null>(null);
-  const API_BASE                = import.meta.env.VITE_API_URL;
+  const [data, setData] = useState<JobResult>({ job: [], processingFiles: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [snack, setSnack] = useState<string | null>(null);
+  const [jobToCancel, setJobToCancel] = useState<Job | null>(null);
+  const [busyCancel, setBusyCancel] = useState(false);
 
-  // Fetch jobs + files
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get<JobResult>(`${API_BASE}datasets/jobs`);
-        console.log('Fetched jobs:', res.data);
-        setData(res.data);
-        setError(null);
-      } catch (e: any) {
-        setError(e.response?.data?.message || 'Failed to load jobs');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  // NEW: track which panel is open (job._id or null)
+  const [expandedJob, setExpandedJob] = useState<string | null>(null);
 
-  const cancelJob = async (jobId: string) => {
+  const API_BASE = import.meta.env.VITE_API_URL;
+
+  // Fetch function (wrapped in useCallback so deps are stable)
+  const fetchJobs = useCallback(async () => {
     try {
-      await axios.post(`${API_BASE}jobs/${jobId}/cancel`);
-      setSnack(`Job ${jobId} canceled`);
-      // update locally
-      setData((d) =>
-        d && {
-          ...d,
-          jobs: d.job.map((j) =>
-            j._id === jobId ? { ...j, status: 'canceled' } : j
-          ),
-        }
-      );
+      const res = await axios.get<JobResult>(`${API_BASE}datasets/jobs`);
+      setData(res.data);
+      setError(null);
+    } catch (e: any) {
+      setError(e.response?.data?.message || 'Failed to load jobs');
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE]);
+
+  // Poll every 2s
+  useEffect(() => {
+    fetchJobs();
+    const iv = window.setInterval(fetchJobs, 2000);
+    return () => clearInterval(iv);
+  }, [fetchJobs]);
+
+  // Actually perform cancel after confirmation
+  const confirmCancelJob = async () => {
+    if (!jobToCancel) return;
+    setBusyCancel(true);
+    try {
+      await axios.post(`${API_BASE}/datasets/jobs/${jobToCancel._id}/cancel`);
+      setSnack(`Job "${jobToCancel.dataset_name}" canceled`);
+      setData((d) => ({
+        ...d,
+        jobs: d.job.map((j) =>
+          j._id === jobToCancel._id ? { ...j, status: 'canceled' } : j
+        ),
+      }));
     } catch (e: any) {
       setError(e.response?.data?.message || 'Cancel job failed');
+    } finally {
+      setBusyCancel(false);
+      setJobToCancel(null);
     }
   };
 
-  const cancelFile = async (fileId: string) => {
-    try {
-      await axios.post(`${API_BASE}jobs/file/${fileId}/cancel`);
-      setSnack(`File ${fileId} canceled`);
-      setData((d) =>
-        d && {
-          ...d,
-          processingFiles: d.processingFiles.map((f) =>
-            f._id === fileId ? { ...f, status: 'failed' } : f
-          ),
-        }
-      );
-    } catch (e: any) {
-      setError(e.response?.data?.message || 'Cancel file failed');
-    }
-  };
+  // const cancelFile = async (fileId: string) => {
+  //   try {
+  //     await axios.post(`${API_BASE}jobs/file/${fileId}/cancel`);
+  //     setSnack(`File ${fileId} canceled`);
+  //     setData((d) =>
+  //       d && {
+  //         ...d,
+  //         processingFiles: d.processingFiles.map((f) =>
+  //           f._id === fileId ? { ...f, status: 'failed' } : f
+  //         ),
+  //       }
+  //     );
+  //   } catch (e: any) {
+  //     setError(e.response?.data?.message || 'Cancel file failed');
+  //   }
+  // };
 
-  const deleteFile = async (fileId: string) => {
-    try {
-      await axios.delete(`${API_BASE}jobs/file/${fileId}`);
-      setSnack(`File ${fileId} deleted`);
-      setData((d) =>
-        d && {
-          ...d,
-          processingFiles: d.processingFiles.filter((f) => f._id !== fileId),
-        }
-      );
-    } catch (e: any) {
-      setError(e.response?.data?.message || 'Delete file failed');
-    }
-  };
+  // const deleteFile = async (fileId: string) => {
+  //   try {
+  //     await axios.delete(`${API_BASE}jobs/file/${fileId}`);
+  //     setSnack(`File ${fileId} deleted`);
+  //     setData((d) =>
+  //       d && {
+  //         ...d,
+  //         processingFiles: d.processingFiles.filter((f) => f._id !== fileId),
+  //       }
+  //     );
+  //   } catch (e: any) {
+  //     setError(e.response?.data?.message || 'Delete file failed');
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -132,52 +142,69 @@ export default function JobsPage() {
     return <Alert severity="info">No jobs found.</Alert>;
   }
 
+  if (loading) {
+    return (
+      <Box textAlign="center" mt={4}>
+        <CircularProgress /><Typography>Loading jobs…</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box mx="auto" maxWidth="lg" mt={4} p={2}>
-      <Typography variant="h4" gutterBottom>
-        Processing Jobs
-      </Typography>
+      <Typography variant="h4" gutterBottom>Status Jobs</Typography>
 
-      {data.job.map((job) => {
-        const filesForJob = data.processingFiles.filter(
-          (f) => f.job_id === job._id
-        );
-        const isActive = job.status === 'pending' || job.status === 'processing';
+      {data.job.map((j) => {
+        const filesForJob = data.processingFiles.filter(f => f.job_id === j._id);
+        // const isActive = j.status === 'pending' || j.status === 'processing';
+
+        // NEW: controlled expand handler
+        const handleExpand = (_: React.SyntheticEvent, isEx: boolean) => {
+          setExpandedJob(isEx ? j._id : null);
+        };
 
         return (
-          <Accordion key={job._id} sx={{ mb: 2 }}>
+          <Accordion
+            key={j._id}
+            expanded={expandedJob === j._id}
+            onChange={handleExpand}
+            sx={{ mb: 2 }}
+          >
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="h6">{job.dataset_name}</Typography>
+                <Typography variant="h6">{j.dataset_name}</Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Created: {new Date(job.createdAt).toLocaleString()}
+                  Created: {new Date(j.createdAt).toLocaleString()}
                 </Typography>
               </Box>
-              <Box sx={{ textAlign: 'right' }}>
+              <Box sx={{ textAlign: 'right', alignContent: 'center' }}>
                 <Typography
                   variant="body2"
+                  marginRight={1}
+
                   color={
-                    job.status === 'completed'
+                    j.status === 'completed'
                       ? 'success.main'
-                      : job.status === 'failed' || job.status === 'canceled'
-                      ? 'error.main'
-                      : 'textSecondary'
+                      : j.status === 'failed' || j.status === 'canceled'
+                        ? 'error.main'
+                        : j.status === 'processing' ? 'textSecondary' : 'warning'
                   }
                 >
-                  {job.status.toUpperCase()}
+                  {j.status.toUpperCase()}
                 </Typography>
-                {isActive && (
-                  <Button
-                    size="small"
+
+                {/* {isActive && (
+                  <Typography
+                    variant="body2"
                     color="error"
-                    onClick={() => cancelJob(job._id)}
+                    sx={{ cursor: 'pointer', marginRight: 1, ":hover": { textDecoration: 'underline' } }}
+                    onClick={() => setJobToCancel(j)}
                   >
-                    Cancel Job
-                  </Button>
-                )}
+                    Cancel
+                  </Typography>
+                )} */}
               </Box>
             </AccordionSummary>
-
             <AccordionDetails>
               {filesForJob.length === 0 ? (
                 <Typography>No files</Typography>
@@ -186,23 +213,36 @@ export default function JobsPage() {
                   <TableHead>
                     <TableRow>
                       <TableCell>File Name</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Created At</TableCell>
-                      <TableCell align="right">Actions</TableCell>
+                      <TableCell align='right'>Status</TableCell>
+                      {/* <TableCell>Created At</TableCell> */}
+                      {/* <TableCell align="right">Actions</TableCell> */}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {filesForJob.map((file) => {
-                      const isFileActive =
-                        file.status === 'pending' || file.status === 'processing';
+                      // const isFileActive =
+                      //   file.status === 'pending' || file.status === 'processing';
                       return (
                         <TableRow key={file._id} hover>
                           <TableCell>{file.file_name}</TableCell>
-                          <TableCell>{file.status}</TableCell>
-                          <TableCell>
-                            {new Date(file.createdAt).toLocaleTimeString()}
-                          </TableCell>
                           <TableCell align="right">
+
+                            {file.status=== 'completed' ? (
+                              <Typography color="success.main">Completed</Typography>
+                            ) : file.status === 'failed' ? (
+                              <Typography color="error.main">Failed</Typography>
+                            ) : file.status === 'canceled' ? (
+                              <Typography color="error.main">Canceled</Typography>
+                            ) : file.status === 'processing' ? (
+                              <Typography color="textSecondary">
+                                <CircularProgress size={20} />
+                              </Typography>
+                            ) : file.status === 'pending' ? (
+                              <Typography color="textSecondary">Pending</Typography>
+                            ) : null}
+                          </TableCell>
+
+                          {/* <TableCell align="right">
                             {isFileActive && (
                               <IconButton
                                 size="small"
@@ -212,13 +252,15 @@ export default function JobsPage() {
                                 <CancelIcon />
                               </IconButton>
                             )}
-                            <IconButton
-                              size="small"
-                              onClick={() => deleteFile(file._id)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
+                            {file.status !== 'completed' && file.status !== 'failed' && (
+                              <IconButton
+                                size="small"
+                                onClick={() => deleteFile(file._id)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            )}
+                          </TableCell> */}
                         </TableRow>
                       );
                     })}
@@ -230,18 +272,43 @@ export default function JobsPage() {
         );
       })}
 
-      {/* Snackbars */}
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={!!jobToCancel}
+        onClose={() => setJobToCancel(null)}
+      >
+        <DialogTitle>Cancel Job</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to cancel the job “
+            {jobToCancel?.dataset_name}”? This will stop processing all files.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setJobToCancel(null)}
+            disabled={busyCancel}
+          >
+            No, keep running
+          </Button>
+          <Button
+            onClick={confirmCancelJob}
+            color="error"
+            disabled={busyCancel}
+          >
+            {busyCancel ? <CircularProgress size={16} /> : 'Yes, cancel'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={!!snack}
         autoHideDuration={3000}
         onClose={() => setSnack(null)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert
-          severity="success"
-          onClose={() => setSnack(null)}
-          sx={{ width: '100%' }}
-        >
+        <Alert severity="success" onClose={() => setSnack(null)}>
           {snack}
         </Alert>
       </Snackbar>
@@ -251,11 +318,7 @@ export default function JobsPage() {
         onClose={() => setError(null)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert
-          severity="error"
-          onClose={() => setError(null)}
-          sx={{ width: '100%' }}
-        >
+        <Alert severity="error" onClose={() => setError(null)}>
           {error}
         </Alert>
       </Snackbar>

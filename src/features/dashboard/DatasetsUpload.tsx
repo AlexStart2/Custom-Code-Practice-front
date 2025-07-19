@@ -113,9 +113,7 @@ export default function DatasetsUpload() {
 
     formData.append('chunk_size', chunkSize.toString());
     formData.append('chunk_overlap', chunkOverlap.toString());
-
-    console.log(formData.get('datasetName'));
-
+    
     try {
       setUploading(true);
       setProgress(0);
@@ -134,8 +132,8 @@ export default function DatasetsUpload() {
         }
       );
       setFiles([]);
-      setDatasetName('');     // clear name
-      setSuccessMsg('Dataset uploaded successfully');
+      setDatasetName('');
+      setSuccessMsg('Dataset uploaded, processing started, please check the Jobs page for status.');
     } catch (err) {
       console.error(err);
       setError('Upload failed. Please try again.');

@@ -22,20 +22,25 @@ import { Box,
 } from '@mui/material';
   import { Link as RouterLink } from 'react-router-dom';
 import { Delete as DeleteIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export interface Dataset {
   _id: string;
   name: string;
+  owner: string;
   createdAt: string;
-  chunks: any[];
+  files: string[];
 }
+
 
 export default function Datasets() {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // For delete confirmation dialog
   const [toDelete, setToDelete] = useState<Dataset | null>(null);
@@ -77,7 +82,7 @@ export default function Datasets() {
     setDeleting(true);
     try {
       await axios.delete(
-        `${API_BASE_URL}datasets/${toDelete._id}`, // your delete endpoint
+        `${API_BASE_URL}datasets/dataset/${toDelete._id}`, // your delete endpoint
       );
       setSuccess(`Deleted “${toDelete.name}”`);
       setToDelete(null);
@@ -113,15 +118,11 @@ export default function Datasets() {
           </TableHead>
           <TableBody>
             {datasets.map((ds) => (
-              <TableRow key={ds._id} hover>
-                <TableCell>{ds.name}</TableCell>
-                <TableCell>{ds.chunks.length}</TableCell>
-                <TableCell>{new Date(ds.createdAt).toLocaleString()}</TableCell>
-                <TableCell align="right">
-                  <Button size="small" component={RouterLink} to={`${ds._id}`}>
-                    View
-                  </Button>
-                </TableCell>
+              <TableRow key={ds._id} hover 
+              sx={{ cursor: 'pointer' }}>
+                <TableCell onClick={() => navigate(`/dashboard/datasets/${ds._id}`)} >{ds.name}</TableCell>
+                <TableCell onClick={() => navigate(`/dashboard/datasets/${ds._id}`)} >{ds.files.length}</TableCell>
+                <TableCell onClick={() => navigate(`/dashboard/datasets/${ds._id}`)} >{new Date(ds.createdAt).toLocaleString()}</TableCell>
                 <TableCell align="right">
                   <IconButton
                     color="error"

@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { useAuthStore } from '../../store/auth';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const PYTHON_API_URL = import.meta.env.VITE_API_PYTHON_API_URL;
@@ -38,6 +39,7 @@ export default function AskPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<RagResponse | null>(null);
+  const navigate = useNavigate();
 
   // 1) Fetch available datasets on mount
   useEffect(() => {
@@ -63,7 +65,15 @@ export default function AskPage() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setModels(res.data);
+        const data = res.data;
+
+        // delte first element
+        if (Array.isArray(data) && data.length > 0) {
+          data.shift(); // Remove the first element
+        }
+
+        setModels(data);
+
         if (res.data.length > 0) {
           setSelectedModel(res.data[0]); // Set default model
         }
@@ -89,7 +99,17 @@ export default function AskPage() {
       setResponse(res.data);
     } catch (err) {
       console.error(err);
-      alert('Failed to get answer');
+
+      // Cast err to any to safely access code property
+      if ((err as any).code === 501) {
+        alert('Server is busy, please try again later.');
+      } else if ((err as any).response?.status === 401) {
+        alert('Unauthorized. Please log in again.');
+        navigate('auth/login');
+      }else{
+        alert('An error occurred while processing your request.');
+      }
+
     } finally {
       setLoading(false);
     }
