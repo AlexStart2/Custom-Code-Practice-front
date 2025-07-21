@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Box } from "@mui/material";
-import Sidebar from "../../components/SideBar";
+import Sidebar from "./SideBar";
 
 
 export default function DashboardLayout() {

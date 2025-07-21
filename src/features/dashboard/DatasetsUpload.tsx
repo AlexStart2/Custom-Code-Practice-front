@@ -136,7 +136,7 @@ export default function DatasetsUpload() {
       setSuccessMsg('Dataset uploaded, processing started, please check the Jobs page for status.');
     } catch (err) {
       console.error(err);
-      setError('Upload failed. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to upload dataset');
     } finally {
       setUploading(false);
       fetchDatasets(); // Refresh datasets after upload

@@ -1,25 +1,14 @@
 // src/components/Sidebar.tsx
 import { NavLink } from 'react-router-dom';
 import { Box, List, ListItemButton, ListItemIcon, ListItemText, Drawer } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import StorageIcon from '@mui/icons-material/Storage';
-import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-import SettingsIcon from '@mui/icons-material/Settings';
 
-const links = [
-  { to: '/dashboard', label: 'Overview', icon: <DashboardIcon /> },
-  { to: '/dashboard/datasets', label: 'Datasets', icon: <StorageIcon /> },
-  { to: '/dashboard/jobs', label: 'Jobs', icon: <PlaylistAddCheckIcon /> },
-  // { to: '/dashboard/models',     label: 'Trained Models',       icon: <ModelTrainingIcon /> },
-  { to: '/dashboard/ask', label: 'Ask RAG', icon: <PlayCircleOutlineIcon /> },
-  { to: '/dashboard/settings', label: 'Settings', icon: <SettingsIcon /> },
-];
 
-export default function Sidebar() {
-  const appBarHeight = 64;
+
+export default function HistoryList() {
+    const appBarHeight = 64;
+
   return (
-    <Drawer variant="permanent">
+    <Drawer variant="permanent" anchor="right">
       <Box
         component="nav"
         sx={{
@@ -35,7 +24,7 @@ export default function Sidebar() {
         }}
       >
         <List>
-          {links.map(link => (
+          {/* {links.map(link => (
             <ListItemButton
               key={link.to}
               component={NavLink}
@@ -51,7 +40,7 @@ export default function Sidebar() {
               <ListItemIcon>{link.icon}</ListItemIcon>
               <ListItemText primary={link.label} />
             </ListItemButton>
-          ))}
+          ))} */}
         </List>
       </Box>
     </Drawer>

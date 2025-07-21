@@ -25,7 +25,7 @@ export default function LayoutRoot() {
                 <p>&copy; {new Date().getFullYear()} Trainify. All rights reserved.</p>
             </footer> */}
 
-            <Box component="footer" py = {2} textAlign="center" bgcolor="grey.100">
+            <Box component="footer" py = {2} textAlign="center" bgcolor="grey.100" sx={{ zIndex: theme => theme.zIndex.drawer + 1 }}>
                 <Typography variant='body2' color='textSecondary'>
                     &copy; {new Date().getFullYear()} Trainify. All rights reserved.
                 </Typography>

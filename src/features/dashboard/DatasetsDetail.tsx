@@ -44,18 +44,61 @@ export default function DatasetDetail() {
   const [error, setError]   = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // For renaming dataset
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName]         = useState('');
 
-  // For delete confirmation
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting]           = useState(false);
+  const [chunkToDelete, setChunkToDelete] = useState<{
+    fileId: string;
+    idx: number;
+    textPreview: string;
+  } | null>(null);
+
+  const [editingChunk, setEditingChunk] = useState<{
+    fileId: string;
+    idx: number;
+    text: string;
+  } | null>(null);
+
+  const onRequestDeleteChunk = (fileId: string, idx: number, text: string) => {
+    setChunkToDelete({ fileId, idx, textPreview: text.slice(0, 100) + (text.length>100?'…':'') });
+  };
+
+  const confirmDeleteChunk = async () => {
+    if (!chunkToDelete || !id) return;
+    const { fileId, idx } = chunkToDelete;
+    try {
+      await axios.delete(
+        `${API}datasets/${id}/files/${fileId}/chunks/${idx}`
+      );
+      setData((d) => {
+        if (!d) return d;
+        return {
+          ...d,
+          files: d.files.map((file) =>
+            file._id !== fileId
+              ? file
+              : {
+                  ...file,
+                  results: file.results.filter((_, i) => i !== idx),
+                }
+          ),
+        };
+      });
+      setSuccess("Chunk deleted");
+    } catch (e: any) {
+      setError(e.response?.data?.message || "Failed to delete chunk");
+    } finally {
+      setChunkToDelete(null);
+    }
+  };
 
   // Track which files are “expanded” (show all chunks) by file _id
   const [expandedFiles, setExpandedFiles] = useState<Record<string, boolean>>({});
 
   const API = import.meta.env.VITE_API_URL;
+  const PYTHON_API = import.meta.env.VITE_API_PYTHON_API_URL;
 
   useEffect(() => {
     if (!id) return;
@@ -109,13 +152,49 @@ export default function DatasetDetail() {
     }));
   };
 
-  // Handlers for chunk edit/delete — fill these in to call your API
   const handleEditChunk = (fileId: string, idx: number) => {
-    console.log('Edit chunk', fileId, idx);
-  };
-  const handleDeleteChunk = async (fileId: string, idx: number) => {
-    // call DELETE /datasets/:id/file/:fileId/chunk/:idx
-    console.log('Delete chunk', fileId, idx);
+  // pre‑populate dialog with current text
+  const file = data!.files.find((f) => f._id === fileId)!;
+  const currentText = file.results[idx].text;
+  setEditingChunk({ fileId, idx, text: currentText });
+};
+
+const saveEditedChunk = async () => {
+    if (!editingChunk || !id) return;
+    const { fileId, idx, text } = editingChunk;
+    const formData = new FormData();
+    formData.append('fileId', fileId);
+    const _id = String(idx);
+    formData.append('idx', _id);
+    formData.append('text', text);
+
+    try {
+      await axios.patch(
+        `${PYTHON_API}datasets/files/chunks/`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      // update local state
+      setData((d) => {
+        if (!d) return d;
+        const files = d.files.map((file) => {
+          if (file._id !== fileId) return file;
+          const results = [...file.results];
+          results[idx] = { ...results[idx], text };
+          return { ...file, results };
+        });
+        return { ...d, files };
+      });
+      setSuccess("Chunk updated");
+    } catch (e: any) {
+      setError(e.response?.data?.message || "Failed to update chunk");
+    } finally {
+      setEditingChunk(null);
+    }
   };
 
   if (loading) {
@@ -195,6 +274,7 @@ export default function DatasetDetail() {
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell>Chunk Text</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -214,9 +294,15 @@ export default function DatasetDetail() {
                         <Edit fontSize="small" />
                       </IconButton>
                       <IconButton
-                        size="small"
-                        onClick={() => handleDeleteChunk(fileDetail._id, idx)}
-                      >
+                            size="small"
+                            onClick={() =>
+                              onRequestDeleteChunk(
+                                fileDetail._id,
+                                idx,
+                                chunk.text
+                              )
+                            }
+                          >
                         <Delete fontSize="small" />
                       </IconButton>
                     </TableCell>
@@ -242,6 +328,77 @@ export default function DatasetDetail() {
           </Button>
           <Button onClick={doDelete} color="error" disabled={deleting}>
             {deleting ? <CircularProgress size={20} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit‐Chunk Dialog */}
+      <Dialog
+        open={!!editingChunk}
+        onClose={() => setEditingChunk(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Chunk</DialogTitle>
+        <DialogContent>
+          <TextField
+            multiline
+            minRows={4}
+            fullWidth
+            value={editingChunk?.text}
+            onChange={(e) =>
+              setEditingChunk((c) =>
+                c ? { ...c, text: e.target.value } : c
+              )
+            }
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditingChunk(null)}>Cancel</Button>
+          <Button onClick={saveEditedChunk} variant="contained">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={!!chunkToDelete}
+        onClose={() => setChunkToDelete(null)}
+      >
+        <DialogTitle>Delete Chunk?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this chunk?
+            <Box
+              mt={2}
+              p={1}
+              sx={{
+                maxHeight: 120,
+                overflow: "auto",
+                bgcolor: "grey.100",
+                borderRadius: 1,
+              }}
+            >
+              <Typography variant="body2">
+                {chunkToDelete?.textPreview}
+              </Typography>
+            </Box>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setChunkToDelete(null)}
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDeleteChunk}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+          >
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

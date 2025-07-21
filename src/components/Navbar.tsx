@@ -22,7 +22,7 @@ export default function Navbar() {
   };
 
   return (
-    <AppBar position="static" color="transparent" elevation={1}>
+    <AppBar position="sticky" color="default" elevation={1} sx={{ zIndex: theme => theme.zIndex.drawer + 1 }}>
       <Toolbar>
         <Typography
           variant="h6"

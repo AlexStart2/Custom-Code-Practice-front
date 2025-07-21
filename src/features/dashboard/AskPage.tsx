@@ -16,6 +16,7 @@ import {
 import axios from 'axios';
 import { useAuthStore } from '../../store/auth';
 import { useNavigate } from 'react-router-dom';
+import HistoryList from '../../components/historyList';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const PYTHON_API_URL = import.meta.env.VITE_API_PYTHON_API_URL;
@@ -23,6 +24,9 @@ const PYTHON_API_URL = import.meta.env.VITE_API_PYTHON_API_URL;
 interface Dataset {
   _id: string;
   name: string;
+  owner: string;
+  createdAt: string;
+  files: string[];
 }
 
 interface RagResponse {
@@ -56,6 +60,10 @@ export default function AskPage() {
           // If keyed by id
           list = Object.values(data) as Dataset[];
         }
+
+        // order by createdAt descending
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
         setDatasets(list);
       });
 
@@ -116,6 +124,8 @@ export default function AskPage() {
   }
 
   return (
+    <>
+    <HistoryList />
     <Box maxWidth="md" mx="auto" mt={4} p={2}>
       <Typography variant="h4" gutterBottom>
         Ask your model
@@ -182,9 +192,9 @@ export default function AskPage() {
           <Typography variant="h6">Answer</Typography>
           <Typography paragraph>{response.answer}</Typography>
 
-          <Typography variant="subtitle1" gutterBottom>
+          {/* <Typography variant="subtitle1" gutterBottom>
             Supporting Context NEED TO ADD THRESHOLD
-          </Typography>
+          </Typography> */}
           {/* {response.context.map((text, i) => (
             <Box key={i} sx={{ mb: 1 }}>
               <Typography>{text}</Typography>
@@ -193,5 +203,6 @@ export default function AskPage() {
         </Paper>
       )}
     </Box>
+    </>
   );
 }

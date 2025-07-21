@@ -61,6 +61,9 @@ export default function Datasets() {
         // If keyed by id
         list = Object.values(data) as Dataset[];
       }
+
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
       setDatasets(list);
     } catch (err: any) {
       setError(err.message || 'Failed to load datasets');

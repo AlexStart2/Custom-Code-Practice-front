@@ -36,7 +36,7 @@ interface ProcessingFile {
   error?: string;
 }
 
-interface JobResult {
+export interface JobResult {
   job: Job[];
   processingFiles: ProcessingFile[];
 }
@@ -58,6 +58,10 @@ export default function JobsPage() {
   const fetchJobs = useCallback(async () => {
     try {
       const res = await axios.get<JobResult>(`${API_BASE}datasets/jobs`);
+
+      res.data.job.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      res.data.processingFiles.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
       setData(res.data);
       setError(null);
     } catch (e: any) {
@@ -95,38 +99,6 @@ export default function JobsPage() {
     }
   };
 
-  // const cancelFile = async (fileId: string) => {
-  //   try {
-  //     await axios.post(`${API_BASE}jobs/file/${fileId}/cancel`);
-  //     setSnack(`File ${fileId} canceled`);
-  //     setData((d) =>
-  //       d && {
-  //         ...d,
-  //         processingFiles: d.processingFiles.map((f) =>
-  //           f._id === fileId ? { ...f, status: 'failed' } : f
-  //         ),
-  //       }
-  //     );
-  //   } catch (e: any) {
-  //     setError(e.response?.data?.message || 'Cancel file failed');
-  //   }
-  // };
-
-  // const deleteFile = async (fileId: string) => {
-  //   try {
-  //     await axios.delete(`${API_BASE}jobs/file/${fileId}`);
-  //     setSnack(`File ${fileId} deleted`);
-  //     setData((d) =>
-  //       d && {
-  //         ...d,
-  //         processingFiles: d.processingFiles.filter((f) => f._id !== fileId),
-  //       }
-  //     );
-  //   } catch (e: any) {
-  //     setError(e.response?.data?.message || 'Delete file failed');
-  //   }
-  // };
-
   if (loading) {
     return (
       <Box textAlign="center" mt={4}>
@@ -151,7 +123,7 @@ export default function JobsPage() {
   }
 
   return (
-    <Box mx="auto" maxWidth="lg" mt={4} p={2}>
+    <Box mx="auto" maxWidth="lg" p={2}>
       <Typography variant="h4" gutterBottom>Status Jobs</Typography>
 
       {data.job.map((j) => {
@@ -214,8 +186,6 @@ export default function JobsPage() {
                     <TableRow>
                       <TableCell>File Name</TableCell>
                       <TableCell align='right'>Status</TableCell>
-                      {/* <TableCell>Created At</TableCell> */}
-                      {/* <TableCell align="right">Actions</TableCell> */}
                     </TableRow>
                   </TableHead>
                   <TableBody>
