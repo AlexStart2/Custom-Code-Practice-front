@@ -23,6 +23,7 @@ import { Box,
   import { Link as RouterLink } from 'react-router-dom';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -36,6 +37,7 @@ export interface Dataset {
 
 
 export default function Datasets() {
+  const token = useAuthStore(s => s.token);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,22 +53,30 @@ export default function Datasets() {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get<Dataset[]>(`${API_BASE_URL}datasets/get-user-datasets`); // After implementing the backend to change type
+      const response = await axios.get<Dataset[]>(`${API_BASE_URL}datasets/get-user-datasets`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
       // Normalize the response into an array
       const data = response.data;
       let list: Dataset[] = [];
+      
       if (Array.isArray(data)) {
         list = data;
-      } else if (typeof data === 'object') {
-        // If keyed by id
+      } else if (typeof data === 'object' && data !== null) {
+        // If keyed by id, convert to array
         list = Object.values(data) as Dataset[];
       }
 
+      // Sort by creation date (newest first)
       list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
       setDatasets(list);
     } catch (err: any) {
-      setError(err.message || 'Failed to load datasets');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load datasets';
+      setError(errorMessage);
+      console.error('Failed to load datasets:', err);
     } finally {
       setLoading(false);
     }

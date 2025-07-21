@@ -9,7 +9,7 @@ import RegisterPage from '../features/auth/RegisterPage';
 import HelpPage from '../features/help/HelpPage';
 import Settings from '../features/dashboard/Settings';
 import DatasetsUpload from '../features/dashboard/DatasetsUpload';
-import AskPage from '../features/dashboard/AskPage';
+import AskPage from '../features/dashboard/AskChat';
 import { useAuthStore } from '../store/auth';
 import DatasetDetail from '../features/dashboard/DatasetsDetail';
 import JobStatus from '../features/dashboard/JobStatus';

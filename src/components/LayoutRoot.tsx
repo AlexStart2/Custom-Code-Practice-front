@@ -21,10 +21,6 @@ export default function LayoutRoot() {
                 </Container>
             </Box>
 
-            {/* <footer className='bg-white border-t p-4 text-center text-sm text-gray-500'>
-                <p>&copy; {new Date().getFullYear()} Trainify. All rights reserved.</p>
-            </footer> */}
-
             <Box component="footer" py = {2} textAlign="center" bgcolor="grey.100" sx={{ zIndex: theme => theme.zIndex.drawer + 1 }}>
                 <Typography variant='body2' color='textSecondary'>
                     &copy; {new Date().getFullYear()} Trainify. All rights reserved.

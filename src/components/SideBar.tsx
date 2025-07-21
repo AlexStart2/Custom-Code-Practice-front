@@ -1,4 +1,4 @@
-// src/components/Sidebar.tsx
+
 import { NavLink } from 'react-router-dom';
 import { Box, List, ListItemButton, ListItemIcon, ListItemText, Drawer } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -11,7 +11,6 @@ const links = [
   { to: '/dashboard', label: 'Overview', icon: <DashboardIcon /> },
   { to: '/dashboard/datasets', label: 'Datasets', icon: <StorageIcon /> },
   { to: '/dashboard/jobs', label: 'Jobs', icon: <PlaylistAddCheckIcon /> },
-  // { to: '/dashboard/models',     label: 'Trained Models',       icon: <ModelTrainingIcon /> },
   { to: '/dashboard/ask', label: 'Ask RAG', icon: <PlayCircleOutlineIcon /> },
   { to: '/dashboard/settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
